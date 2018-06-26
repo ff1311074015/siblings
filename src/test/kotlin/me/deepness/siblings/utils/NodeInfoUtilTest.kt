@@ -35,6 +35,8 @@ class NodeInfoUtilTest {
     fun testGenServiceNode() {
         val port = environment.getProperty("local.server.port") ?: "0"
         val node = ServiceNode.Factory.init(port)
+        val applicationName = environment.getProperty("spring.application.name") ?: ""
         println("node: $node")
+        println("app: $applicationName")
     }
 }
