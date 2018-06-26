@@ -1,6 +1,8 @@
 package me.deepness.siblings.utils
 
 import me.deepness.siblings.core.ServiceNode
+import me.deepness.siblings.utils.NodeInfoUtil.getHostName
+import me.deepness.siblings.utils.NodeInfoUtil.getIPAddress
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,7 +38,10 @@ class NodeInfoUtilTest {
         val port = environment.getProperty("local.server.port") ?: "0"
         val node = ServiceNode.Factory.init(port)
         val applicationName = environment.getProperty("spring.application.name") ?: ""
+        val appName = environment.getAppName()
+        Assert.assertEquals(appName, applicationName)
         println("node: $node")
         println("app: $applicationName")
+        println("appName: $appName")
     }
 }

@@ -1,7 +1,7 @@
 package me.deepness.siblings.core
 
-import me.deepness.siblings.utils.getHostName
-import me.deepness.siblings.utils.getIPAddress
+import me.deepness.siblings.utils.NodeInfoUtil.getHostName
+import me.deepness.siblings.utils.NodeInfoUtil.getIPAddress
 import java.util.*
 
 data class ServiceNode(
