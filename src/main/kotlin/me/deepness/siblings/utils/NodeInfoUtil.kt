@@ -47,4 +47,4 @@ object NodeInfoUtil {
 
 fun Environment.getAppName(): String = this.getProperty("spring.application.name", "siblings")
 
-fun Environment.runningOnPort(): String = this.getProperty("local.server.port", "0")
+fun Environment.runningOnPort(): String = this.getProperty("server.port", "0")

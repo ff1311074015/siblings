@@ -6,13 +6,13 @@ import me.deepness.siblings.utils.runningOnPort
 import mu.KotlinLogging
 import org.apache.curator.framework.CuratorFramework
 import org.apache.zookeeper.CreateMode
-import org.apache.zookeeper.data.Stat
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import javax.annotation.PostConstruct
 
-const val SIBLINGS_ROOT_PATH = "/config/e"
+const val SIBLINGS_ROOT_PATH = "/siblings/e"
+const val MACHINE_PATH = "machines"
 
 interface NodeManagerService {
     fun getSiblings(): List<ServiceNode>
@@ -39,20 +39,13 @@ class NodeManagerServiceZkImpl : NodeManagerService {
     private fun registerServiceNode() {
         val serviceName = environment.getAppName()
         val appPath = "$SIBLINGS_ROOT_PATH/$serviceName"
-        val stat: Stat? = client.checkExists().forPath(appPath)
-        if (stat == null) {
-            client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(appPath)
-            logger.info { "AppPath: $appPath 不存在，生成之" }
-        }
-
         val node = ServiceNode.Factory.init(environment.runningOnPort())
-        val nodePath = "$appPath/${node.ip}:${node.port}"
+        val nodePath = "$appPath/$MACHINE_PATH/${node.ip}:${node.port}"
         val nodeStat = client.checkExists().forPath(nodePath)
-
         if (nodeStat == null) {
             val mapper = jacksonObjectMapper()
             val jsonStr = mapper.writeValueAsBytes(node)
-            client.create().withMode(CreateMode.EPHEMERAL).forPath(nodePath, jsonStr)
+            client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(nodePath, jsonStr)
         }
     }
 
