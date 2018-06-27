@@ -5,6 +5,8 @@ import me.deepness.siblings.utils.getAppName
 import me.deepness.siblings.utils.runningOnPort
 import mu.KotlinLogging
 import org.apache.curator.framework.CuratorFramework
+import org.apache.curator.framework.recipes.leader.LeaderSelector
+import org.apache.curator.framework.recipes.leader.LeaderSelectorListenerAdapter
 import org.apache.zookeeper.CreateMode
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.env.Environment
@@ -13,6 +15,8 @@ import javax.annotation.PostConstruct
 
 const val SIBLINGS_ROOT_PATH = "/siblings/e"
 const val MACHINE_PATH = "machines"
+const val COORDINATOR_PATH = "coordinator"
+const val AN_HOUR: Long = 60 * 60 * 1000
 
 interface NodeManagerService {
     fun getSiblings(): List<ServiceNode>
@@ -27,6 +31,10 @@ class NodeManagerServiceZkImpl : NodeManagerService {
     @Autowired
     private lateinit var client: CuratorFramework
 
+    private lateinit var appPath: String
+
+    private var iAmMaster = false
+
     override fun getSiblings(): List<ServiceNode> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -34,11 +42,12 @@ class NodeManagerServiceZkImpl : NodeManagerService {
     @PostConstruct
     fun init() {
         registerServiceNode()
+        masterElect()
     }
 
     private fun registerServiceNode() {
         val serviceName = environment.getAppName()
-        val appPath = "$SIBLINGS_ROOT_PATH/$serviceName"
+        appPath = "$SIBLINGS_ROOT_PATH/$serviceName"
         val node = ServiceNode.Factory.init(environment.runningOnPort())
         val nodePath = "$appPath/$MACHINE_PATH/${node.ip}:${node.port}"
         val nodeStat = client.checkExists().forPath(nodePath)
@@ -47,6 +56,18 @@ class NodeManagerServiceZkImpl : NodeManagerService {
             val jsonStr = mapper.writeValueAsBytes(node)
             client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(nodePath, jsonStr)
         }
+    }
+
+    private fun masterElect() {
+        val leaderSelector = LeaderSelector(client, "$appPath/$COORDINATOR_PATH", object : LeaderSelectorListenerAdapter() {
+            override fun takeLeadership(client: CuratorFramework?) {
+                iAmMaster = true
+                logger.info { "now I am a Master!" }
+                Thread.sleep(AN_HOUR)
+            }
+        })
+        leaderSelector.autoRequeue()
+        leaderSelector.start()
     }
 
 
